@@ -1,0 +1,172 @@
+name: Sync upstream and publish container
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/GamerFarm/**
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/publish-container.yml
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: publish-container-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync upstream without discarding fork changes
+    if: github.repository == 'Panda-995/gamerfarm'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      revision: ${{ steps.sync.outputs.revision }}
+      changed: ${{ steps.sync.outputs.changed }}
+    steps:
+      - name: Merge upstream and select the exact build revision
+        id: sync
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const ref = 'heads/main';
+            const before = await github.rest.git.getRef({ owner, repo, ref });
+            if (['schedule', 'workflow_dispatch'].includes(context.eventName)) {
+              try {
+                const result = await github.rest.repos.mergeUpstream({ owner, repo, branch: 'main' });
+                core.info(result.data.message);
+              } catch (error) {
+                if (error.status === 409) {
+                  core.setFailed('Upstream merge conflicts with fork changes. Resolve the conflict on main; no force push was attempted.');
+                  return;
+                }
+                throw error;
+              }
+            }
+            const after = await github.rest.git.getRef({ owner, repo, ref });
+            core.setOutput('revision', after.data.object.sha);
+            core.setOutput('changed', before.data.object.sha !== after.data.object.sha ? 'true' : 'false');
+            await core.summary.addHeading('Upstream synchronization')
+              .addRaw(`Build revision: ${after.data.object.sha}\n`)
+              .write();
+
+  publish:
+    name: Build, test and publish amd64 + arm64
+    needs: sync
+    if: github.event_name != 'schedule' || needs.sync.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out the synchronized revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.sync.outputs.revision }}
+          persist-credentials: false
+
+      - name: Set image names
+        id: image
+        shell: bash
+        run: |
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          echo "tag=sha-$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        with:
+          platforms: arm64
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the candidate image
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ needs.sync.outputs.revision }}
+            org.opencontainers.image.title=gamer.farm
+            org.opencontainers.image.licenses=MPL-2.0
+          cache-from: type=gha,scope=gamerfarm-multiarch
+          cache-to: type=gha,scope=gamerfarm-multiarch,mode=max
+
+      - name: Verify the manifest and start both architectures
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          docker buildx imagetools inspect --raw "$IMAGE@$DIGEST" > /tmp/gamerfarm-manifest.json
+          python3 - <<'PY'
+          import json
+          with open('/tmp/gamerfarm-manifest.json') as manifest_file:
+              manifest = json.load(manifest_file)
+          platforms = {(item['platform']['os'], item['platform']['architecture']) for item in manifest['manifests']}
+          assert {('linux', 'amd64'), ('linux', 'arm64')} <= platforms, platforms
+          print('Verified linux/amd64 and linux/arm64 in the published manifest.')
+          PY
+          trap 'docker rm -f gamerfarm-smoke-amd64 gamerfarm-smoke-arm64 >/dev/null 2>&1 || true' EXIT
+          for arch in amd64 arm64; do
+            name="gamerfarm-smoke-$arch"
+            docker run -d --name "$name" --platform "linux/$arch" \
+              -e GAMERFARM_WEB_PASSWORD=CI-smoke-test-not-a-real-password \
+              -e GAMERFARM_PING_URL=http://127.0.0.1:9/api/farm/ping \
+              "$IMAGE@$DIGEST"
+            ready=false
+            for attempt in $(seq 1 60); do
+              if docker exec "$name" dotnet /app/gamerFarm.dll --path /data --ping; then
+                ready=true
+                break
+              fi
+              if [ "$(docker inspect -f '{{.State.Running}}' "$name")" != true ]; then
+                break
+              fi
+              sleep 2
+            done
+            if [ "$ready" != true ]; then
+              docker logs "$name"
+              echo "Smoke test failed for linux/$arch" >&2
+              exit 1
+            fi
+            docker stop --time 60 "$name"
+          done
+
+      - name: Promote the verified image to latest
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+          REVISION: ${{ needs.sync.outputs.revision }}
+        run: |
+          docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE@$DIGEST"
+          docker buildx imagetools inspect "$IMAGE:latest"
+          {
+            echo '## Published container'
+            echo "- Image: \`$IMAGE:latest\`"
+            echo "- Revision tag: \`$IMAGE:$IMAGE_TAG\`"
+            echo '- Platforms: linux/amd64, linux/arm64'
+            echo "- Source commit: $REVISION"
+            echo '- Both architectures passed dashboard startup checks.'
+          } >> "$GITHUB_STEP_SUMMARY"

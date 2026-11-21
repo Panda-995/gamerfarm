@@ -1,0 +1,20 @@
+services:
+  gamerfarm:
+    image: ghcr.io/panda-995/gamerfarm:latest
+    container_name: gamerfarm
+    hostname: gamerfarm
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 1m
+    stdin_open: true
+    user: "${PUID:-1000}:${PGID:-1000}"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      GAMERFARM_WEB_PASSWORD: ${GAMERFARM_WEB_PASSWORD:?Set a dashboard password in .env}
+    ports:
+      - "7242:7242"
+    volumes:
+      - ./config:/data/config
+      - ./logs:/data/logs
+      - ./backups:/data/backups
+      - ./plugins:/data/plugins
