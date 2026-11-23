@@ -1,0 +1,346 @@
+<p align="center">
+  <img src="assets/overview.png" alt="gamer.farm's dashboard: every account at a glance" width="880">
+</p>
+
+<h1 align="center">gamer.farm</h1>
+
+<p align="center">
+  <b>Farms Steam trading cards and idles games on all your accounts, in the background.<br>
+  The account you play on can act like a real person.</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/VisaHolder/gamerfarm/releases/latest"><img src="https://img.shields.io/github/v/release/VisaHolder/gamerfarm?label=release&color=8b5cf6" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MPL--2.0-blue" alt="MPL-2.0"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/VisaHolder/gamerfarm/releases/latest"><b>Download</b></a> ·
+  <a href="https://gamer.mom/docs">Guide</a> ·
+  <a href="https://gamer.mom/commands">Commands</a>
+</p>
+
+## Download and install
+
+Get it from the [latest release](https://github.com/VisaHolder/gamerfarm/releases/latest), or from
+[gamer.mom](https://gamer.mom). It runs on Windows, Mac and Linux, and in Docker. Nothing else
+needs installing first, not even .NET.
+
+<p align="center">
+  <img src="assets/setup.png" alt="The setup: one screen, then it opens gamer.farm" width="880">
+  <br><sub>The setup is one screen: which idler you're switching from, start with Windows, a desktop shortcut.</sub>
+</p>
+
+1. There are two Windows files:
+   - `gamer.farm-v…-setup.exe` is the one most people want. It installs like any other app, with a Start menu
+     entry, a desktop shortcut, start with Windows, and an uninstaller in *Settings → Apps*. No admin rights
+     needed. If you already use ArchiSteamFarm, Idle Master or a portable gamer.farm, it finds it and offers to
+     bring your accounts over.
+     If Windows says it protected your PC, click More info, then Run anyway.
+   - `gamer.farm-v…-portable.zip` is the portable version. Right-click it, *Extract All…*, and run `gamerFarm.exe`.
+     Nothing gets installed and everything stays in that folder.
+2. The dashboard opens in your browser with a short walkthrough. Pick your language, then **Easy** (a few plain
+   questions, about two minutes) or **Advanced** (your phone, opening it from anywhere, notifications, the update
+   hours, then every setting of the account).
+3. Say what the account is for. *My main - I play on it* turns on human mode. *A spare or farm account* farms at
+   full speed. You can change this any time.
+4. Add your Steam account. You type the password once, or in Advanced you can tick *Sign in with a QR code* and
+   scan it with the Steam app instead. If the walkthrough finds another idler, it offers to bring those accounts
+   across.
+
+<p align="center">
+  <img src="assets/walkthrough.png" alt="The first-run walkthrough: Easy or Advanced, what the account is for, and bringing accounts over from ArchiSteamFarm" width="880">
+  <br><sub>The walkthrough: Easy or Advanced, what the account is for, and your old idler's accounts if it found any.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/walkthrough-phone.png" alt="The walkthrough on a phone: Easy or Advanced, then whether to use it from your phone" width="420">
+  <br><sub>The same walkthrough on a phone.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/setup-existing.png" alt="The setup when gamer.farm is already on the PC" width="880">
+  <br><sub>Run the setup again and it offers to move a portable copy into the install, or to update or uninstall.</sub>
+</p>
+
+It starts farming cards straight away. Both Windows versions are the same app, and both update themselves.
+
+**Updating:** click **Update** on the dashboard or type `update accept`. Accounts, settings and logs are kept. Set
+*Updates* to *install when I click, once everyone's asleep* and it holds the install until nobody's playing, or to *install by itself at night* for
+no click at all. `update now` always installs straight
+away. The Linux and Mac zips update themselves the same way, also as a Linux service with the unit in the zip. In
+Docker you update by hand; see [Linux, Mac and Docker](https://gamer.mom/docs#linux-mac-and-docker).
+
+**A Mac, Linux or a server?** There are Mac zips (Apple Silicon and Intel: unzip, double-click `start.command`), a
+Linux zip for x64 and arm64 (Raspberry Pi), and a Dockerfile with an example compose file. You get the console and
+the web dashboard, no window. See [Linux, Mac and Docker](https://gamer.mom/docs#linux-mac-and-docker).
+
+## What it does
+
+gamer.farm signs your Steam accounts in and farms their trading cards, one game after another, with a rough
+estimate of how long is left. When the cards are done it idles your games for playtime, up to 32 at once, and can
+show a made-up game name on your profile (like `gamer.mom`) while the real games keep counting.
+
+The account you actually play on can go in **human mode**. Then it plays one game at a time, takes breaks and
+meals, goes to bed, and skips the odd day. When a game drops its last card it plays on for another 15-20 minutes
+before a break, the way a normal session ends. Start a game yourself on any account and gamer.farm backs off, then
+picks up again a few minutes after you stop.
+
+Beyond that:
+
+- Gifts, guest passes and sale stickers are picked up by default. Free-to-keep games and free DLC are one choice.
+  During Steam sales, robot accounts also nominate and vote in the Steam Awards and claim the sale's queue item
+  (human-mode accounts only if you switch that on). `events` shows what it did.
+- Donations are accepted, items move between your own accounts, and fair one-for-one card swaps are taken if you
+  turn that on. Any other offer is announced with a number (log, pop-up, Discord, Telegram) and waits for
+  `trade accept myaccount 3` or `trade decline myaccount 3`.
+- Card swaps with other gamer.farm users (off until you turn them on, per account): spare normal cards swapped one
+  for one with other people's accounts, paired by gamer.mom, checked by both sides, never a card your sets need.
+- For accounts whose authenticator is in gamer.farm there's an Authenticator page: the Steam Guard code, and trades
+  and market listings to confirm or deny, like the Steam app.
+- A new VAC, game, trade or community ban is reported straight away, and that game's items are kept out of trades.
+- Scam watch looks at each account every 30-60 minutes for the signs of a stolen account: a new API key, a new
+  device, the email, phone or Steam Guard changing, or everything signed out. On a change you're told straight away
+  and that account stops trading by itself until you type `scamwatch ok myaccount`.
+- Each account card has a Health line: level, bans, trade hold, market, limited account, Steam Guard and phone.
+  You're told once when something gets worse. `health` shows it all.
+- Daily backups, locked with a password you pick, go into a folder you choose (OneDrive, a USB drive) and open on
+  any PC. Off until you set a folder and password. `backup now` makes one straight away.
+- History charts show cards per day, hours banked and inventory value, with this week against last.
+- The Phone page gives you QR codes for your Wi-Fi and for away from home, and a checklist that fixes whatever
+  isn't ready. The dashboard can go on your phone's home screen with the gamer.farm icon.
+- Discord and Telegram can send you notifications and take commands.
+- If you switch it on, achievements are earned one at a time in an order a real player could manage: "10 kills"
+  after "5 kills", chapter 2 after chapter 1, Hard after Normal, the ending last. It paces them to how long the
+  game really takes, so "finish the game" never lands 3 hours into a 20-hour game. An optional hunter picks games to
+  earn them in.
+
+**Your items are safe by default.** gamer.farm never sells, turns into gems, opens, buys, swaps or spends anything by
+itself. Spare items, opening and making booster packs, spending Steam Points, buying cards and card swaps are all off
+until you switch them on in an account's settings - and selling, gems, Steam Points, buying cards and card swaps show
+what they would do first and ask you to confirm. The only things it picks up by itself are free: event items during
+Steam sales, and free games if you turn that on.
+
+- Spare items (off until you turn it on): spare cards and duplicate backgrounds and emoticons are turned into gems
+  or sold, whichever pays more, a few a day, never anything worth more than a price limit, priced in each account's
+  own wallet currency. Turning it on shows what it would do first and asks you to confirm.
+- Booster packs can open by themselves, always, when the cards are worth more than the pack, when even the three
+  cheapest cards of the pack are worth more, or when either - off until you choose. Steam Points can buy levels of the
+  seasonal badge, keeping at least 1,000 and spending at most 3,000 a week, once you turn it on (it shows what it would
+  buy first and asks you to confirm). Buying cards (off until you turn it on) buys the cards your badges are missing at
+  the cheapest price, whole sets only, within a day's and a week's spending limit (1.50 and 8.00 in your wallet's
+  currency) - and, if you like, the cheapest full sets. It can also buy a game's booster packs instead (off until you
+  turn it on), only when the packs and the cards they're expected to leave missing come out at least a tenth cheaper
+  than the cards - a pack is 3 random cards of the whole set, so that's mostly small sets with cheap packs. Nothing that
+  sells, opens or uses up your items is on by default.
+- Software (OBS, ShareX, Blender...) can be idled anywhere a game can. With Steam Family games, when the copy in use
+  is busy, another member's free copy is borrowed.
+- Smaller extras: pricing your next Steam level, making booster packs from gems, crafting badges and product keys.
+- **Add-ons**: reap's official extras, installed from the dashboard's Plugins page in one click, each one checked
+  against a signed list first. [rep4rep](docs/rep4rep.md) is one (earn rep4rep points from your accounts' comments).
+  [The list](docs/addons.md).
+- It imports accounts and settings from ArchiSteamFarm, Idle Master Extended, Idle Master, HourBoostr,
+  SingleBoostr, Steam Game Idler and steam-idler, and asks for each one whether you play on it or it's a spare.
+- It updates itself when you click Update, or at night while your accounts sleep. A new version that won't start
+  is put back automatically.
+
+There's no sign-up and no cloud. Your accounts never leave your PC, and every password, login token and
+authenticator it keeps is encrypted.
+
+## What it looks like
+
+<p align="center">
+  <img src="assets/accounts.png" alt="The accounts page: what each account is doing and what your friends see" width="880">
+  <br><sub>Each account: what it's doing, cards left, and exactly what your friends see. The dashboard lives at <code>http://127.0.0.1:7242/</code> and opens by itself.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/history.png" alt="History charts: cards, hours and inventory value day by day" width="880">
+  <br><sub>History: cards, hours banked and inventory value, day by day.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/settings.png" alt="Human mode settings: what a day looks like, in plain words" width="880">
+  <br><sub>Human mode: pick the games and the routine, and it tells you what a day will look like.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/authenticator.png" alt="The Authenticator page: Steam Guard code and confirmations" width="880">
+  <br><sub>The Authenticator page: the code, and confirm or deny, for accounts whose authenticator is in gamer.farm.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/console.png" alt="The console: type a command, get an answer" width="880">
+  <br><sub>Everything is also a command. Type <code>help</code> to see them all.</sub>
+</p>
+
+## Use it from your phone
+
+The dashboard works on a phone, and the **Phone** tab is where you set that up. It shows two links as QR codes,
+one for your home Wi-Fi and one for away from home, each with a Copy button. Under them is a checklist that ticks
+itself off as things get fixed: a dashboard password, opening it to other devices, Windows Firewall, and your
+router. Anything that isn't ready has its fix right beside it, including a button that restarts the dashboard
+without signing your accounts out.
+
+To have it one tap away, put it on your phone's home screen: on an iPhone, Safari's Share button then *Add to Home
+Screen* (it opens like an app); on Android, Chrome's ⋮ menu then *Add to Home screen*. Alerts come through Telegram or
+Discord.
+
+Away from home works like Jellyfin: your router forwards the port and nothing else needs installing. It needs a
+password of at least 12 characters. If you'd rather not open anything, Telegram and Discord work from anywhere, and
+their setup is on the same page.
+
+<p align="center">
+  <img src="assets/phone.png" alt="The Phone page on a PC and on a phone: home and away-from-home links as QR codes" width="880">
+  <br><sub>The Phone page on a PC and on a phone (the addresses are examples).</sub>
+</p>
+
+## Mini mode
+
+Click **mini** on the window (or type `mini`) and it shrinks to a small panel: up to 5 accounts, what each is doing,
+and a start/stop button, with a bar like `+7 more · 6 idling` for the rest - click it to see 10 at a time and scroll.
+Accounts that need you go to the top in yellow. A farming account opens up to show cards left, time left and a
+progress bar, and the top shows today's game-hours (or another number you pick). The pin keeps it above your other
+windows (off by default), and the arrow brings the full window back.
+
+<p align="center">
+  <img src="assets/mini-mode.png" alt="Mini mode: one line per account, and a farming account shows its progress" width="680">
+  <br><sub>Left: one account farming, one playing, one idling. Right: a human-mode account farming its cards, one paused, one stopped, pinned on top.</sub>
+</p>
+
+## The commands you'll actually use
+
+Type these in the app window or the dashboard's Console tab. You can also send them to an account in Steam chat;
+[the guide](https://gamer.mom/docs#commands-by-steam-chat) shows how.
+
+| Command | What it does |
+|---|---|
+| `status` | What every account is doing right now. |
+| `add myaccount mylogin human` | Add an account: `human` for your main (human mode), `robot` for a farm account. |
+| `start myaccount` · `stop myaccount` | Sign an account in or out (`all` works too). |
+| `pause myaccount 60` | Take a 60-minute break, then carry on by itself. |
+| `cards` | Cards left to farm, and about how long it'll take. |
+| `drops myaccount` | Go for card drops right now, then back to normal. |
+| `play myaccount 730, 440` | Idle these games (the number is in the game's store link). Human-mode accounts pick their games under Settings → Human mode instead. |
+| `gamename myaccount gamer.mom` | Show this name on your profile instead of the real game. |
+| `human myaccount week` | See how human mode would spend the next week. |
+| `value` | What each account's items are worth. |
+| `match` | Swap spare cards between your own accounts so sets finish (`match do` sends them). |
+| `spare preview myaccount` | Which spare items it would turn into gems or sell, and why (`spare on myaccount` turns it on). |
+| `levelup myaccount 50` | What reaching Steam level 50 would cost. |
+| `offers` | Every trade offer that's waiting. |
+| `scamwatch` · `health` | The last scam-watch look and each account's health. |
+| `backup now` | Make a locked backup straight away (`backup status` says when the next one is due). |
+| `dashboard` | The dashboard's address on this PC, on your phone, and from anywhere if you've set that up. |
+| `update accept` | Install the newest version (`update now` skips any waiting, `update skip` skips that version). |
+| `help` | Every command. `help <anything>` explains one command or setting; `help rot` lists everything starting with "rot". |
+
+[Every command](https://gamer.mom/commands) is in one list. In the app, `help` shows the same list.
+
+## Human mode
+
+Turn it on for an account under **Settings → Human mode**, or with `set myaccount LegitMode true`. The account then
+plays one game at a time in sittings of believable length, a main game with a few side games. It takes breaks and
+meals, goes to bed at night, and now and then takes a day off. Trades, gifts and friend requests get answered after
+a person's sort of delay, not two seconds later. Its cards farm inside that normal day. You can also give it hour
+targets, like 100 hours of a game by a date you pick.
+
+`selfcheck` scores a human-mode account out of 100 for how real it looks from the outside, and tells you which
+setting fixes each problem. Accounts without human mode just farm and idle as hard as they can, which is fine for
+spares.
+
+## Is it safe?
+
+Your accounts, login tokens and logs stay on your PC and are never uploaded. A password is only needed once: after
+the first sign-in a Steam login token does the work, stored encrypted and tied to your Windows user (on Linux,
+encrypted with a key only your user can read).
+
+It talks to Steam, and to GitHub every 2 hours to see if there's a new version (you can change that or turn it
+off). Discord, Telegram, add-ons like rep4rep and SteamSpy (game lengths for achievements) only come into it if you
+turn them on, and *Open from anywhere* only talks to your router if you turn it on.
+
+Once an hour it tells gamer.mom it's running, to count Steam accounts: a random install ID, the version, the platform
+and how many of your accounts are signed in (just the number), nothing else. About every 6 hours the same message
+also carries a few numbers, the game-hours banked, the cards dropped, and the items turned into gems, badges crafted,
+packs opened and items sold, for the totals on gamer.mom's gamer.farm page (*Share my farming totals* turns just that
+off). While an account buys the cheapest full sets, about every 6 hours it also shares the cheapest card sets it found
+on the market - market prices only - and takes back the ones other copies found (*Share cheapest sets with other
+gamer.farm users* turns just that off). *Count me as a user* turns it all off.
+
+It won't fight you for an account. Launch a game on one of its accounts and that account steps back. For an account
+you also use in your own Steam app, turn on *I also use this account in my own Steam app* and it won't kick you off Friends & Chat.
+
+Automating your accounts is against Steam's Subscriber Agreement and can get an account limited or banned.
+gamer.farm is built to be gentle, but only run it on accounts you're OK with risking.
+
+## FAQ
+
+**Will I get banned?** People have used card idlers for years and bans for idling alone are rare. It is against
+Steam's rules though, so there's always some risk. Human mode makes an account look a lot more normal.
+
+**Can I still play on my account?** Yes. Start a game and that account backs off by itself, then picks back up a
+few minutes after you stop.
+
+**How many accounts can it run?** As many as you like. They sign in one after another so Steam doesn't mind.
+
+**Can all my accounts join my Steam group?** Yes. Paste the group's link into **Groups every account joins**
+(Settings → Global settings → All accounts). It starts with the gamer.farm group, and you can change or clear it.
+Each account joins at its own random time, minutes apart, so they don't all turn up at once. `joingroup all <link>`
+does it right now. Only open groups work; ones that need approval or an invite are skipped, and the log says why.
+
+**Do I have to type my password every time?** No. Once, or never if you sign in with a QR code.
+
+**I'm coming from another idler.** ArchiSteamFarm, Idle Master Extended, Idle Master, HourBoostr, SingleBoostr,
+Steam Game Idler and steam-idler can all be brought over. Pick yours under *switching from* in the setup, let the
+first-run walkthrough find it, or use **Import from another idler** on the Accounts page any time. It shows what it
+found before writing anything, you pick human or robot for each account, and the other program's files are never
+changed. From ASF the logins and authenticators come across too, so no passwords are needed. More in
+[the guide](https://gamer.mom/docs#coming-from-another-idler).
+
+**The settings page looks short.** That's on purpose. It shows the everyday switches; tick **Show advanced** for
+timings, farming order, the dashboard's port and password, and the rest.
+
+**It says Steam is rate-limiting it.** Steam slows down any PC that asks too much at once, usually after a lot of
+restarts. gamer.farm waits it out by itself.
+
+**Where are my settings?** In the `config` folder next to `gamerFarm.exe`. With the setup that's
+`%LOCALAPPDATA%\Programs\gamer.farm\config`; with the portable zip it's wherever you unzipped it. Back that folder
+up and you've backed up everything. Or turn on **Back up every day** (Settings → Global settings → Backups) for a
+password-locked backup that opens on any PC: on the new one, pick *Restore from a backup file* in the first-run
+walkthrough.
+
+**How do I uninstall it?** Windows *Settings → Apps → gamer.farm → Uninstall*. It asks whether to keep your
+accounts and settings. For the portable zip, close it and delete the folder.
+
+**Can I run it on a VPS, so my PC doesn't have to stay on?** Yes. A small rented Linux server with 1 CPU and 1 GB
+of memory is plenty. Install Docker, start it with the example compose file, and open the dashboard through an SSH
+tunnel, or from anywhere behind a password (HTTPS with your own domain works too). The guide goes through it step
+by step, from renting the server to adding your accounts:
+[On a VPS](https://gamer.mom/docs#on-a-vps-a-rented-server).
+
+**What if something breaks?** The dashboard's **Log** tab says what happened in plain words. If that doesn't help,
+open an [issue](https://github.com/VisaHolder/gamerfarm/issues) and paste the log lines.
+
+## More
+
+- [The guide](https://gamer.mom/docs) starts with a beginner's walkthrough, then covers every feature and
+  setting. The same pages are in [docs/](docs/README.md) here.
+- [Every command](https://gamer.mom/commands), in one list.
+- [Add-ons](docs/addons.md): reap's official add-ons ([the signed list](addons/addons.json)), also on
+  [gamer.mom](https://gamer.mom/addons).
+- [Write a plugin](https://gamer.mom/plugins) to add your own commands and features in a few lines of C#.
+- To build it yourself you need the [.NET 10 SDK](https://dotnet.microsoft.com/download):
+
+  ```
+  git clone https://github.com/VisaHolder/gamerfarm.git
+  cd gamerfarm
+  dotnet publish src/GamerFarm -c Release -o run
+  run\gamerFarm.exe
+  ```
+
+## Licence
+
+[Mozilla Public License 2.0](LICENSE). Use it, fork it, sell it. Plugins can use any licence you like, even
+closed-source. If you change gamer.farm's own files and share the result, share those changes too.
+
+Built on [SteamKit2](https://github.com/SteamRE/SteamKit). Everything else is written from scratch for gamer.farm.

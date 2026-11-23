@@ -1,346 +1,305 @@
 <p align="center">
-  <img src="assets/overview.png" alt="gamer.farm's dashboard: every account at a glance" width="880">
+  <img src="assets/overview.png" alt="gamer.farm 管理面板：查看所有账号的运行状态" width="880">
 </p>
 
-<h1 align="center">gamer.farm</h1>
+<h1 align="center">gamer.farm 中文介绍</h1>
 
 <p align="center">
-  <b>Farms Steam trading cards and idles games on all your accounts, in the background.<br>
-  The account you play on can act like a real person.</b>
-</p>
-
-<p align="center">
-  <a href="https://github.com/VisaHolder/gamerfarm/releases/latest"><img src="https://img.shields.io/github/v/release/VisaHolder/gamerfarm?label=release&color=8b5cf6" alt="Latest release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MPL--2.0-blue" alt="MPL-2.0"></a>
+  <b>在后台管理多个 Steam 账号，自动挂卡、累计游戏时长。<br>
+  常用账号可以启用人类模式，按日常作息安排游戏。</b>
 </p>
 
 <p align="center">
-  <a href="https://github.com/VisaHolder/gamerfarm/releases/latest"><b>Download</b></a> ·
-  <a href="https://gamer.mom/docs">Guide</a> ·
-  <a href="https://gamer.mom/commands">Commands</a>
-</p>
-
-## Download and install
-
-Get it from the [latest release](https://github.com/VisaHolder/gamerfarm/releases/latest), or from
-[gamer.mom](https://gamer.mom). It runs on Windows, Mac and Linux, and in Docker. Nothing else
-needs installing first, not even .NET.
-
-<p align="center">
-  <img src="assets/setup.png" alt="The setup: one screen, then it opens gamer.farm" width="880">
-  <br><sub>The setup is one screen: which idler you're switching from, start with Windows, a desktop shortcut.</sub>
-</p>
-
-1. There are two Windows files:
-   - `gamer.farm-v…-setup.exe` is the one most people want. It installs like any other app, with a Start menu
-     entry, a desktop shortcut, start with Windows, and an uninstaller in *Settings → Apps*. No admin rights
-     needed. If you already use ArchiSteamFarm, Idle Master or a portable gamer.farm, it finds it and offers to
-     bring your accounts over.
-     If Windows says it protected your PC, click More info, then Run anyway.
-   - `gamer.farm-v…-portable.zip` is the portable version. Right-click it, *Extract All…*, and run `gamerFarm.exe`.
-     Nothing gets installed and everything stays in that folder.
-2. The dashboard opens in your browser with a short walkthrough. Pick your language, then **Easy** (a few plain
-   questions, about two minutes) or **Advanced** (your phone, opening it from anywhere, notifications, the update
-   hours, then every setting of the account).
-3. Say what the account is for. *My main - I play on it* turns on human mode. *A spare or farm account* farms at
-   full speed. You can change this any time.
-4. Add your Steam account. You type the password once, or in Advanced you can tick *Sign in with a QR code* and
-   scan it with the Steam app instead. If the walkthrough finds another idler, it offers to bring those accounts
-   across.
-
-<p align="center">
-  <img src="assets/walkthrough.png" alt="The first-run walkthrough: Easy or Advanced, what the account is for, and bringing accounts over from ArchiSteamFarm" width="880">
-  <br><sub>The walkthrough: Easy or Advanced, what the account is for, and your old idler's accounts if it found any.</sub>
+  <a href="https://github.com/VisaHolder/gamerfarm/releases/latest"><img src="https://img.shields.io/github/v/release/VisaHolder/gamerfarm?label=上游版本&color=8b5cf6" alt="上游最新版本"></a>
+  <a href="https://github.com/Panda-995/gamerfarm/actions/workflows/publish-container.yml"><img src="https://github.com/Panda-995/gamerfarm/actions/workflows/publish-container.yml/badge.svg" alt="上游同步与双架构构建状态"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/许可证-MPL--2.0-blue" alt="MPL-2.0 许可证"></a>
 </p>
 
 <p align="center">
-  <img src="assets/walkthrough-phone.png" alt="The walkthrough on a phone: Easy or Advanced, then whether to use it from your phone" width="420">
-  <br><sub>The same walkthrough on a phone.</sub>
+  <a href="https://github.com/VisaHolder/gamerfarm">上游项目</a> ·
+  <a href="https://github.com/users/Panda-995/packages/container/package/gamerfarm">Docker 镜像</a> ·
+  <a href="https://gamer.mom/docs">使用指南</a> ·
+  <a href="https://gamer.mom/commands">命令列表</a> ·
+  <a href="README.upstream.md">上游英文原文</a>
+</p>
+
+本仓库是 [VisaHolder/gamerfarm](https://github.com/VisaHolder/gamerfarm) 的 Fork，提供中文项目说明、预构建 Docker 镜像和自动上游同步。应用功能沿用上游，支持 Windows、macOS、Linux 和 Docker。
+
+## Docker / NAS 部署
+
+镜像地址：`ghcr.io/panda-995/gamerfarm:latest`。支持 `linux/amd64` 和 `linux/arm64`，Docker 会自动选择适合宿主机的架构。镜像已公开，拉取时无需登录 GHCR，也不需要本地编译。
+
+将下面内容保存为 `compose.yaml`，或直接下载 [docker-compose.ghcr.yml](docker-compose.ghcr.yml)：
+
+```yaml
+services:
+  gamerfarm:
+    image: ghcr.io/panda-995/gamerfarm:latest
+    container_name: gamerfarm
+    hostname: gamerfarm
+    restart: unless-stopped
+    init: true
+    stdin_open: true
+    stop_grace_period: 1m
+
+    user: "0:0"
+
+    environment:
+      TZ: Asia/Shanghai
+      GAMERFARM_WEB_PASSWORD: "panda995"
+
+    ports:
+      - "7242:7242"
+
+    volumes:
+      - ./config:/data/config
+      - ./logs:/data/logs
+      - ./backups:/data/backups
+      - ./plugins:/data/plugins
+```
+
+在 Compose 文件所在目录执行：
+
+```bash
+mkdir -p config logs backups plugins
+docker compose up -d
+```
+
+打开 `http://你的NAS或服务器IP:7242`，输入管理密码 `panda995`，然后添加 Steam 账号。`GAMERFARM_WEB_PASSWORD` 是网页管理后台的密码，与 Steam 登录密码分别设置。
+
+本配置使用 `user: "0:0"`，容器以 root 用户运行，便于读写 NAS 挂载的数据目录。`TZ: Asia/Shanghai` 决定人类模式作息、夜间规则和日报使用的时区。
+
+首次进入可以选择「简体中文」；已有配置可在 **Settings → Global settings → Language** 中切换。部分尚未翻译的内容及控制台命令回复仍显示英文。
+
+| 宿主机目录 | 保存内容 |
+| --- | --- |
+| `./config` | 账号、登录令牌、设置及状态 |
+| `./logs` | 运行日志 |
+| `./backups` | 备份和恢复前保留的副本 |
+| `./plugins` | 插件及附加组件 |
+
+更新容器：
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+查看日志使用 `docker compose logs -f gamerfarm`，停止服务使用 `docker compose down`。更多配置见 [容器部署说明](CONTAINER.md)。
+
+## 自动同步与镜像构建
+
+[GitHub Actions 工作流](.github/workflows/publish-container.yml) 每 6 小时检查一次上游 `VisaHolder/gamerfarm` 的 `main` 分支，计划时间为北京时间 **02:23、08:23、14:23、20:23**，实际执行可能受 GitHub 调度延迟影响。
+
+1. 同步上游代码，保留本仓库的中文 `README.md`；上游英文说明同步保存到 `README.upstream.md`。
+2. 上游有新提交时，在同一次工作流中构建 `linux/amd64` 和 `linux/arm64` 镜像。
+3. 检查镜像清单，并分别启动两种架构的容器，验证管理面板健康检查。
+4. 全部通过后更新 `ghcr.io/panda-995/gamerfarm:latest`，同时保留 `sha-<12位提交号>` 标签，便于固定版本。
+
+同步与构建在同一条工作流中串联，不依赖同步机器人推送后再次触发构建。工作流只使用 GitHub 提供的临时 `GITHUB_TOKEN`，无需添加个人令牌。应用代码发生合并冲突时停止同步，不强制覆盖。
+
+推送相关代码或部署配置会触发构建；也可以在 **Actions → Sync upstream and publish container → Run workflow** 手动同步并重建。镜像发布后，已部署的 NAS 仍需执行上面的更新命令才能使用新版本。
+
+## 主要功能
+
+gamer.farm 登录 Steam 账号后，会逐个游戏挂卡，并估算剩余时间。卡片掉落结束后，可以继续累计指定游戏的时长，最多同时挂 32 个游戏。也可以设置自定义游戏名称，在个人资料上显示该名称，实际游戏仍累计时长。
+
+常用账号可以开启**人类模式**：一次玩一个游戏，安排休息、吃饭、睡觉，偶尔跳过一天。最后一张卡片掉落后还会继续运行约 15～20 分钟，再按作息休息。自己开始玩游戏时，程序会暂停该账号的挂机，退出游戏几分钟后再恢复。
+
+其他功能包括：
+
+- **多个账号**：统一查看状态，分别设置常用账号和挂卡账号，并在自己的账号之间转移物品。
+- **免费内容与活动**：领取礼物、访客通行证及促销贴纸；可选领取免费游戏和 DLC。Steam 活动期间支持队列奖励、Steam 大奖提名和投票，可用 `events` 查看记录。
+- **交易管理**：接受赠送物品的报价；可选开启公平的一换一卡片交易。其他报价会编号并通知，等待 `trade accept myaccount 3` 或 `trade decline myaccount 3` 处理。
+- **跨用户换卡**：按账号选择开启后，通过 gamer.mom 匹配其他用户，多余普通卡片一换一，双方都会核对交易，不拿走当前套卡需要的卡片。
+- **验证器**：导入验证器的账号可在 Authenticator 页面查看 Steam Guard 验证码，确认或拒绝交易及市场上架请求。
+- **账号健康检查**：查看等级、封禁、交易暂挂、市场权限、受限状态、Steam Guard 和手机号；状态变差时通知。
+- **异常监测**：每 30～60 分钟检查新增 API Key、新设备、邮箱、手机号、Steam Guard 变化或全端退出等情况；发现变化会通知并暂停自动交易，等待 `scamwatch ok myaccount` 确认。
+- **历史统计**：查看每日掉卡数、累计游戏时长和库存价值，以及本周与上周的变化。
+- **备份恢复**：可配置每日密码加密备份，保存到指定目录；使用 `backup now` 立即备份，也可以在另一台电脑恢复。
+- **通知与远程命令**：支持 Discord、Telegram；网页管理面板也适配手机。
+- **成就功能**：手动开启后，按前置条件、章节、难度和时间安排逐步完成成就，可选自动挑选目标游戏。
+- **软件与家庭共享**：支持累计 OBS、ShareX、Blender 等软件的使用时长，也支持 Steam 家庭共享库。
+- **账号迁移**：导入 ArchiSteamFarm、Idle Master Extended、Idle Master、HourBoostr、SingleBoostr、Steam Game Idler、steam-idler 的账号和设置。
+- **插件扩展**：在 Plugins 页面安装经过签名清单校验的上游附加组件，包括 [rep4rep](docs/rep4rep.md)。完整说明见 [附加组件列表](docs/addons.md)。
+
+涉及物品和余额的功能需要分别开启。多余物品出售或转宝石、拆包或制作补充包、消费 Steam 点数、购买卡片和跨用户换卡等默认关闭；部分功能会先显示预计操作并要求确认。默认自动领取的内容为免费活动物品，以及开启相应选项后的免费游戏。
+
+可选功能还包括按价格和数量限制处理多余卡片、背景及表情；根据卡片估值设置自动拆包条件；制作补充包、合成徽章；按保留点数和每周预算购买季节徽章等级；在每日、每周预算内购买缺失的整套卡片，或计算购买补充包是否更划算。自动领取免费游戏、自定义状态名称、备份、通知和插件等也可以按需配置。
+
+## 下载与安装桌面版
+
+前往[上游最新发行版](https://github.com/VisaHolder/gamerfarm/releases/latest)或 [gamer.mom](https://gamer.mom) 下载。桌面和独立运行版已包含运行环境，无需额外安装 .NET。
+
+<p align="center">
+  <img src="assets/setup.png" alt="安装界面：迁移来源、开机启动与桌面快捷方式" width="880">
+</p>
+
+Windows 提供两种文件：
+
+- `gamer.farm-v…-setup.exe`：安装版，提供开始菜单、桌面快捷方式、开机启动和卸载入口，无需管理员权限。安装器会检查已有的挂机工具或便携版，并提供迁移选项。
+- `gamer.farm-v…-portable.zip`：便携版，解压后运行 `gamerFarm.exe`，程序和数据都保存在解压目录。
+
+macOS 提供 Apple Silicon 和 Intel 版本，解压后运行 `start.command`。Linux 提供 x64、ARM64 等独立运行包。详细步骤见[上游 Linux、Mac 与 Docker 指南](https://gamer.mom/docs#linux-mac-and-docker)。
+
+首次打开管理面板时：
+
+1. 选择界面语言，再选择简易或高级设置。高级设置会进一步询问手机访问、通知、更新时段和账号选项。
+2. 选择账号用途。常用账号启用人类模式，备用或挂卡账号按挂卡模式运行，之后可以随时修改。
+3. 添加 Steam 登录账号，按提示输入密码和 Steam Guard 验证码；也可以用 Steam 手机客户端扫码登录。
+4. 根据需要选择主要游戏、作息和挂卡结束后的行为。检测到其他挂机工具时，也可以选择导入账号。
+
+<p align="center">
+  <img src="assets/walkthrough.png" alt="首次设置：选择模式、账号用途和迁移来源" width="880">
+  <br><sub>首次设置支持简易流程和高级选项。</sub>
 </p>
 
 <p align="center">
-  <img src="assets/setup-existing.png" alt="The setup when gamer.farm is already on the PC" width="880">
-  <br><sub>Run the setup again and it offers to move a portable copy into the install, or to update or uninstall.</sub>
-</p>
-
-It starts farming cards straight away. Both Windows versions are the same app, and both update themselves.
-
-**Updating:** click **Update** on the dashboard or type `update accept`. Accounts, settings and logs are kept. Set
-*Updates* to *install when I click, once everyone's asleep* and it holds the install until nobody's playing, or to *install by itself at night* for
-no click at all. `update now` always installs straight
-away. The Linux and Mac zips update themselves the same way, also as a Linux service with the unit in the zip. In
-Docker you update by hand; see [Linux, Mac and Docker](https://gamer.mom/docs#linux-mac-and-docker).
-
-**A Mac, Linux or a server?** There are Mac zips (Apple Silicon and Intel: unzip, double-click `start.command`), a
-Linux zip for x64 and arm64 (Raspberry Pi), and a Dockerfile with an example compose file. You get the console and
-the web dashboard, no window. See [Linux, Mac and Docker](https://gamer.mom/docs#linux-mac-and-docker).
-
-## What it does
-
-gamer.farm signs your Steam accounts in and farms their trading cards, one game after another, with a rough
-estimate of how long is left. When the cards are done it idles your games for playtime, up to 32 at once, and can
-show a made-up game name on your profile (like `gamer.mom`) while the real games keep counting.
-
-The account you actually play on can go in **human mode**. Then it plays one game at a time, takes breaks and
-meals, goes to bed, and skips the odd day. When a game drops its last card it plays on for another 15-20 minutes
-before a break, the way a normal session ends. Start a game yourself on any account and gamer.farm backs off, then
-picks up again a few minutes after you stop.
-
-Beyond that:
-
-- Gifts, guest passes and sale stickers are picked up by default. Free-to-keep games and free DLC are one choice.
-  During Steam sales, robot accounts also nominate and vote in the Steam Awards and claim the sale's queue item
-  (human-mode accounts only if you switch that on). `events` shows what it did.
-- Donations are accepted, items move between your own accounts, and fair one-for-one card swaps are taken if you
-  turn that on. Any other offer is announced with a number (log, pop-up, Discord, Telegram) and waits for
-  `trade accept myaccount 3` or `trade decline myaccount 3`.
-- Card swaps with other gamer.farm users (off until you turn them on, per account): spare normal cards swapped one
-  for one with other people's accounts, paired by gamer.mom, checked by both sides, never a card your sets need.
-- For accounts whose authenticator is in gamer.farm there's an Authenticator page: the Steam Guard code, and trades
-  and market listings to confirm or deny, like the Steam app.
-- A new VAC, game, trade or community ban is reported straight away, and that game's items are kept out of trades.
-- Scam watch looks at each account every 30-60 minutes for the signs of a stolen account: a new API key, a new
-  device, the email, phone or Steam Guard changing, or everything signed out. On a change you're told straight away
-  and that account stops trading by itself until you type `scamwatch ok myaccount`.
-- Each account card has a Health line: level, bans, trade hold, market, limited account, Steam Guard and phone.
-  You're told once when something gets worse. `health` shows it all.
-- Daily backups, locked with a password you pick, go into a folder you choose (OneDrive, a USB drive) and open on
-  any PC. Off until you set a folder and password. `backup now` makes one straight away.
-- History charts show cards per day, hours banked and inventory value, with this week against last.
-- The Phone page gives you QR codes for your Wi-Fi and for away from home, and a checklist that fixes whatever
-  isn't ready. The dashboard can go on your phone's home screen with the gamer.farm icon.
-- Discord and Telegram can send you notifications and take commands.
-- If you switch it on, achievements are earned one at a time in an order a real player could manage: "10 kills"
-  after "5 kills", chapter 2 after chapter 1, Hard after Normal, the ending last. It paces them to how long the
-  game really takes, so "finish the game" never lands 3 hours into a 20-hour game. An optional hunter picks games to
-  earn them in.
-
-**Your items are safe by default.** gamer.farm never sells, turns into gems, opens, buys, swaps or spends anything by
-itself. Spare items, opening and making booster packs, spending Steam Points, buying cards and card swaps are all off
-until you switch them on in an account's settings - and selling, gems, Steam Points, buying cards and card swaps show
-what they would do first and ask you to confirm. The only things it picks up by itself are free: event items during
-Steam sales, and free games if you turn that on.
-
-- Spare items (off until you turn it on): spare cards and duplicate backgrounds and emoticons are turned into gems
-  or sold, whichever pays more, a few a day, never anything worth more than a price limit, priced in each account's
-  own wallet currency. Turning it on shows what it would do first and asks you to confirm.
-- Booster packs can open by themselves, always, when the cards are worth more than the pack, when even the three
-  cheapest cards of the pack are worth more, or when either - off until you choose. Steam Points can buy levels of the
-  seasonal badge, keeping at least 1,000 and spending at most 3,000 a week, once you turn it on (it shows what it would
-  buy first and asks you to confirm). Buying cards (off until you turn it on) buys the cards your badges are missing at
-  the cheapest price, whole sets only, within a day's and a week's spending limit (1.50 and 8.00 in your wallet's
-  currency) - and, if you like, the cheapest full sets. It can also buy a game's booster packs instead (off until you
-  turn it on), only when the packs and the cards they're expected to leave missing come out at least a tenth cheaper
-  than the cards - a pack is 3 random cards of the whole set, so that's mostly small sets with cheap packs. Nothing that
-  sells, opens or uses up your items is on by default.
-- Software (OBS, ShareX, Blender...) can be idled anywhere a game can. With Steam Family games, when the copy in use
-  is busy, another member's free copy is borrowed.
-- Smaller extras: pricing your next Steam level, making booster packs from gems, crafting badges and product keys.
-- **Add-ons**: reap's official extras, installed from the dashboard's Plugins page in one click, each one checked
-  against a signed list first. [rep4rep](docs/rep4rep.md) is one (earn rep4rep points from your accounts' comments).
-  [The list](docs/addons.md).
-- It imports accounts and settings from ArchiSteamFarm, Idle Master Extended, Idle Master, HourBoostr,
-  SingleBoostr, Steam Game Idler and steam-idler, and asks for each one whether you play on it or it's a spare.
-- It updates itself when you click Update, or at night while your accounts sleep. A new version that won't start
-  is put back automatically.
-
-There's no sign-up and no cloud. Your accounts never leave your PC, and every password, login token and
-authenticator it keeps is encrypted.
-
-## What it looks like
-
-<p align="center">
-  <img src="assets/accounts.png" alt="The accounts page: what each account is doing and what your friends see" width="880">
-  <br><sub>Each account: what it's doing, cards left, and exactly what your friends see. The dashboard lives at <code>http://127.0.0.1:7242/</code> and opens by itself.</sub>
+  <img src="assets/walkthrough-phone.png" alt="手机上的首次设置界面" width="420">
 </p>
 
 <p align="center">
-  <img src="assets/history.png" alt="History charts: cards, hours and inventory value day by day" width="880">
-  <br><sub>History: cards, hours banked and inventory value, day by day.</sub>
+  <img src="assets/setup-existing.png" alt="已有安装的更新、迁移和卸载选项" width="880">
+</p>
+
+Windows 安装版、便携版及 Linux/macOS 独立运行版支持程序内更新。点击管理面板的 Update，或执行 `update accept`；也可配置等待账号休息时更新，或在夜间自动更新。`update now` 会立即更新。Docker 部署通过拉取镜像并重新创建容器更新。
+
+## 界面预览
+
+<p align="center">
+  <img src="assets/accounts.png" alt="账号页面：运行状态、剩余卡片和对外展示状态" width="880">
+  <br><sub>账号页面集中显示每个账号的状态和剩余卡片。</sub>
 </p>
 
 <p align="center">
-  <img src="assets/settings.png" alt="Human mode settings: what a day looks like, in plain words" width="880">
-  <br><sub>Human mode: pick the games and the routine, and it tells you what a day will look like.</sub>
+  <img src="assets/history.png" alt="每日掉卡数、游戏时长与库存价值历史" width="880">
 </p>
 
 <p align="center">
-  <img src="assets/authenticator.png" alt="The Authenticator page: Steam Guard code and confirmations" width="880">
-  <br><sub>The Authenticator page: the code, and confirm or deny, for accounts whose authenticator is in gamer.farm.</sub>
+  <img src="assets/settings.png" alt="人类模式的游戏和日常作息设置" width="880">
 </p>
 
 <p align="center">
-  <img src="assets/console.png" alt="The console: type a command, get an answer" width="880">
-  <br><sub>Everything is also a command. Type <code>help</code> to see them all.</sub>
+  <img src="assets/authenticator.png" alt="验证器页面：验证码和待确认事项" width="880">
 </p>
-
-## Use it from your phone
-
-The dashboard works on a phone, and the **Phone** tab is where you set that up. It shows two links as QR codes,
-one for your home Wi-Fi and one for away from home, each with a Copy button. Under them is a checklist that ticks
-itself off as things get fixed: a dashboard password, opening it to other devices, Windows Firewall, and your
-router. Anything that isn't ready has its fix right beside it, including a button that restarts the dashboard
-without signing your accounts out.
-
-To have it one tap away, put it on your phone's home screen: on an iPhone, Safari's Share button then *Add to Home
-Screen* (it opens like an app); on Android, Chrome's ⋮ menu then *Add to Home screen*. Alerts come through Telegram or
-Discord.
-
-Away from home works like Jellyfin: your router forwards the port and nothing else needs installing. It needs a
-password of at least 12 characters. If you'd rather not open anything, Telegram and Discord work from anywhere, and
-their setup is on the same page.
 
 <p align="center">
-  <img src="assets/phone.png" alt="The Phone page on a PC and on a phone: home and away-from-home links as QR codes" width="880">
-  <br><sub>The Phone page on a PC and on a phone (the addresses are examples).</sub>
+  <img src="assets/console.png" alt="控制台：输入命令并查看回复" width="880">
 </p>
 
-## Mini mode
+## 手机访问
 
-Click **mini** on the window (or type `mini`) and it shrinks to a small panel: up to 5 accounts, what each is doing,
-and a start/stop button, with a bar like `+7 more · 6 idling` for the rest - click it to see 10 at a time and scroll.
-Accounts that need you go to the top in yellow. A farming account opens up to show cards left, time left and a
-progress bar, and the top shows today's game-hours (or another number you pick). The pin keeps it above your other
-windows (off by default), and the arrow brings the full window back.
+Phone 页面提供局域网和外网访问二维码，并检查管理密码、网络访问、防火墙和路由器配置。iPhone 可以通过 Safari 的「添加到主屏幕」创建入口；Android 可以使用浏览器中的相同功能。通知可通过 Telegram 或 Discord 接收。
+
+Docker 部署使用本文配置后，可在局域网访问 `http://服务器IP:7242`。若希望页面显示正确的手机访问链接和二维码，可以增加 `GAMERFARM_HOME_ADDRESS`，值为服务器的局域网 IP。
+
+公网访问需要按[上游远程访问指南](https://gamer.mom/docs#on-a-vps-a-rented-server)配置 `GAMERFARM_PUBLIC_ADDRESS`；反向代理场景还需设置 `GAMERFARM_TRUSTED_PROXIES`。上游外网访问功能要求至少 12 位管理密码，本文默认密码 `panda995` 用于局域网部署示例。
 
 <p align="center">
-  <img src="assets/mini-mode.png" alt="Mini mode: one line per account, and a farming account shows its progress" width="680">
-  <br><sub>Left: one account farming, one playing, one idling. Right: a human-mode account farming its cards, one paused, one stopped, pinned on top.</sub>
+  <img src="assets/phone.png" alt="手机页面：局域网、外网访问链接与二维码" width="880">
 </p>
 
-## The commands you'll actually use
+## 迷你模式
 
-Type these in the app window or the dashboard's Console tab. You can also send them to an account in Steam chat;
-[the guide](https://gamer.mom/docs#commands-by-steam-chat) shows how.
+桌面版点击 **mini** 或输入 `mini`，可缩小为账号状态面板，显示账号当前任务、开始或停止按钮，以及掉卡进度。账号较多时可以展开分页；需要处理的账号会置顶提示。支持窗口置顶和切回完整界面。
 
-| Command | What it does |
-|---|---|
-| `status` | What every account is doing right now. |
-| `add myaccount mylogin human` | Add an account: `human` for your main (human mode), `robot` for a farm account. |
-| `start myaccount` · `stop myaccount` | Sign an account in or out (`all` works too). |
-| `pause myaccount 60` | Take a 60-minute break, then carry on by itself. |
-| `cards` | Cards left to farm, and about how long it'll take. |
-| `drops myaccount` | Go for card drops right now, then back to normal. |
-| `play myaccount 730, 440` | Idle these games (the number is in the game's store link). Human-mode accounts pick their games under Settings → Human mode instead. |
-| `gamename myaccount gamer.mom` | Show this name on your profile instead of the real game. |
-| `human myaccount week` | See how human mode would spend the next week. |
-| `value` | What each account's items are worth. |
-| `match` | Swap spare cards between your own accounts so sets finish (`match do` sends them). |
-| `spare preview myaccount` | Which spare items it would turn into gems or sell, and why (`spare on myaccount` turns it on). |
-| `levelup myaccount 50` | What reaching Steam level 50 would cost. |
-| `offers` | Every trade offer that's waiting. |
-| `scamwatch` · `health` | The last scam-watch look and each account's health. |
-| `backup now` | Make a locked backup straight away (`backup status` says when the next one is due). |
-| `dashboard` | The dashboard's address on this PC, on your phone, and from anywhere if you've set that up. |
-| `update accept` | Install the newest version (`update now` skips any waiting, `update skip` skips that version). |
-| `help` | Every command. `help <anything>` explains one command or setting; `help rot` lists everything starting with "rot". |
+<p align="center">
+  <img src="assets/mini-mode.png" alt="迷你模式：账号状态与挂卡进度" width="680">
+</p>
 
-[Every command](https://gamer.mom/commands) is in one list. In the app, `help` shows the same list.
+## 常用命令
 
-## Human mode
+在管理面板的 Console 页面输入以下命令，也可以在桌面程序窗口中输入。通过 Steam 聊天发送命令的方式见[上游指南](https://gamer.mom/docs#commands-by-steam-chat)。
 
-Turn it on for an account under **Settings → Human mode**, or with `set myaccount LegitMode true`. The account then
-plays one game at a time in sittings of believable length, a main game with a few side games. It takes breaks and
-meals, goes to bed at night, and now and then takes a day off. Trades, gifts and friend requests get answered after
-a person's sort of delay, not two seconds later. Its cards farm inside that normal day. You can also give it hour
-targets, like 100 hours of a game by a date you pick.
+| 命令 | 作用 |
+| --- | --- |
+| `status` | 查看所有账号当前状态。 |
+| `add myaccount mylogin human` | 添加账号；`human` 为人类模式，`robot` 为挂卡模式。 |
+| `start myaccount` / `stop myaccount` | 登录或退出指定账号，`all` 表示全部账号。 |
+| `pause myaccount 60` | 暂停 60 分钟，之后继续运行。 |
+| `cards` | 查看剩余卡片及预计挂卡时间。 |
+| `drops myaccount` | 立即开始挂卡，完成后恢复原来的安排。 |
+| `play myaccount 730, 440` | 为挂卡账号指定游戏；人类模式在设置中选择游戏。 |
+| `gamename myaccount gamer.mom` | 自定义个人资料中显示的游戏名称。 |
+| `human myaccount week` | 查看该账号一周的人类模式安排。 |
+| `value` | 查看各账号库存估值。 |
+| `match` | 检查自己的账号之间能否互换多余卡片，`match do` 执行交易。 |
+| `spare preview myaccount` | 预览多余物品出售或转宝石的操作。 |
+| `levelup myaccount 50` | 估算升级至 Steam 50 级的成本。 |
+| `offers` | 查看等待处理的交易报价。 |
+| `scamwatch` / `health` | 查看异常监测结果及账号健康状态。 |
+| `backup now` | 立即创建备份；`backup status` 查看下次备份时间。 |
+| `dashboard` | 显示管理面板的本机、局域网及已配置的外网地址。 |
+| `update accept` | 独立运行版安装最新更新；`update now` 立即更新，Docker 版使用镜像更新。 |
+| `help` | 查看命令帮助；`help <命令或设置>` 查看具体说明。 |
 
-`selfcheck` scores a human-mode account out of 100 for how real it looks from the outside, and tells you which
-setting fixes each problem. Accounts without human mode just farm and idle as hard as they can, which is fine for
-spares.
+完整列表见[上游命令文档](https://gamer.mom/commands)。
 
-## Is it safe?
+## 人类模式
 
-Your accounts, login tokens and logs stay on your PC and are never uploaded. A password is only needed once: after
-the first sign-in a Steam login token does the work, stored encrypted and tied to your Windows user (on Linux,
-encrypted with a key only your user can read).
+在账号的 **Settings → Human mode** 中开启，或执行 `set myaccount LegitMode true`。程序会按设定选择主要游戏和其他游戏，安排游戏时长、休息、吃饭与睡眠，也会偶尔休息一天。交易、礼物和好友请求按相应延迟处理。还可以设置在指定日期前累计某个游戏的目标时长。
 
-It talks to Steam, and to GitHub every 2 hours to see if there's a new version (you can change that or turn it
-off). Discord, Telegram, add-ons like rep4rep and SteamSpy (game lengths for achievements) only come into it if you
-turn them on, and *Open from anywhere* only talks to your router if you turn it on.
+`selfcheck` 会检查人类模式的配置，并提示可以调整的选项。备用账号不启用人类模式时，会按挂卡模式持续运行。
 
-Once an hour it tells gamer.mom it's running, to count Steam accounts: a random install ID, the version, the platform
-and how many of your accounts are signed in (just the number), nothing else. About every 6 hours the same message
-also carries a few numbers, the game-hours banked, the cards dropped, and the items turned into gems, badges crafted,
-packs opened and items sold, for the totals on gamer.mom's gamer.farm page (*Share my farming totals* turns just that
-off). While an account buys the cheapest full sets, about every 6 hours it also shares the cheapest card sets it found
-on the market - market prices only - and takes back the ones other copies found (*Share cheapest sets with other
-gamer.farm users* turns just that off). *Count me as a user* turns it all off.
+## 数据、联网与使用边界
 
-It won't fight you for an account. Launch a game on one of its accounts and that account steps back. For an account
-you also use in your own Steam app, turn on *I also use this account in my own Steam app* and it won't kick you off Friends & Chat.
+账号、登录令牌、验证器和日志保存在运行程序的电脑或服务器上。首次登录后通常使用保存的 Steam 登录令牌，不必每次输入密码。Windows 的凭据保护与当前用户关联；Linux 使用数据目录中的密钥加密。
 
-Automating your accounts is against Steam's Subscriber Agreement and can get an account limited or banned.
-gamer.farm is built to be gentle, but only run it on accounts you're OK with risking.
+程序连接 Steam，并默认每 2 小时检查一次 GitHub 更新，可在设置中调整或关闭。Discord、Telegram、rep4rep、SteamSpy 等服务在开启相应功能后使用。
 
-## FAQ
+程序还会按上游统计机制定期联系 gamer.mom：每小时报告随机安装 ID、版本、平台和已登录账号数量；约每 6 小时附带游戏时长、掉卡、宝石、徽章、拆包和出售数量等汇总。可通过 **Share my farming totals** 关闭汇总分享，通过 **Count me as a user** 关闭此类统计。开启低价套卡购买时，也可能分享市场最低套卡价格，可单独关闭对应分享选项。
 
-**Will I get banned?** People have used card idlers for years and bans for idling alone are rare. It is against
-Steam's rules though, so there's always some risk. Human mode makes an account look a lot more normal.
+自己在 Steam 客户端启动游戏时，程序会暂停该账号挂机。常用账号可开启 **I also use this account in my own Steam app**，避免程序修改好友与聊天在线状态。
 
-**Can I still play on my account?** Yes. Start a game and that account backs off by itself, then picks back up a
-few minutes after you stop.
+上游说明提醒：Steam 账号自动化存在违反平台协议、账号受限或封禁的风险，人类模式并不保证账号安全。请在使用前了解上游说明及 Steam 的相关规则。
 
-**How many accounts can it run?** As many as you like. They sign in one after another so Steam doesn't mind.
+## 常见问题
 
-**Can all my accounts join my Steam group?** Yes. Paste the group's link into **Groups every account joins**
-(Settings → Global settings → All accounts). It starts with the gamer.farm group, and you can change or clear it.
-Each account joins at its own random time, minutes apart, so they don't all turn up at once. `joingroup all <link>`
-does it right now. Only open groups work; ones that need approval or an invite are skipped, and the log says why.
+**界面支持中文吗？** 支持简体中文。首次设置可选中文，之后在全局设置的 Language 中修改。
 
-**Do I have to type my password every time?** No. Once, or never if you sign in with a QR code.
+**后台登录密码是什么？** 本文 Compose 设置为 `panda995`，它只是网页管理密码。Steam 账号在管理页面另外添加。
 
-**I'm coming from another idler.** ArchiSteamFarm, Idle Master Extended, Idle Master, HourBoostr, SingleBoostr,
-Steam Game Idler and steam-idler can all be brought over. Pick yours under *switching from* in the setup, let the
-first-run walkthrough find it, or use **Import from another idler** on the Accounts page any time. It shows what it
-found before writing anything, you pick human or robot for each account, and the other program's files are never
-changed. From ASF the logins and authenticators come across too, so no passwords are needed. More in
-[the guide](https://gamer.mom/docs#coming-from-another-idler).
+**容器一直重启怎么办？** 先执行 `docker compose logs --tail=100 gamerfarm`。若出现 `Permission denied` 或 `can't write to /data/config as uid 1000`，检查实际使用的 Compose 是否已设置本文的 `user: "0:0"`，并确认挂载目录可以写入。
 
-**The settings page looks short.** That's on purpose. It shows the everyday switches; tick **Show advanced** for
-timings, farming order, the dashboard's port and password, and the rest.
+**自己还能玩游戏吗？** 可以。该账号开始游戏后，程序暂停挂机，退出游戏几分钟后恢复。
 
-**It says Steam is rate-limiting it.** Steam slows down any PC that asks too much at once, usually after a lot of
-restarts. gamer.farm waits it out by itself.
+**可以管理多少个账号？** 上游没有设定固定账号数量限制，程序会依次登录；实际容量取决于机器和使用方式。
 
-**Where are my settings?** In the `config` folder next to `gamerFarm.exe`. With the setup that's
-`%LOCALAPPDATA%\Programs\gamer.farm\config`; with the portable zip it's wherever you unzipped it. Back that folder
-up and you've backed up everything. Or turn on **Back up every day** (Settings → Global settings → Backups) for a
-password-locked backup that opens on any PC: on the new one, pick *Restore from a backup file* in the first-run
-walkthrough.
+**需要每次输入 Steam 密码吗？** 通常只需首次登录，或直接用 Steam 手机客户端扫码。
 
-**How do I uninstall it?** Windows *Settings → Apps → gamer.farm → Uninstall*. It asks whether to keep your
-accounts and settings. For the portable zip, close it and delete the folder.
+**如何从其他挂机工具迁移？** 在首次设置中选择来源，或在 Accounts 页面使用 Import from another idler。程序先显示检测结果，再由你确认导入，并分别选择人类模式或挂卡模式。先停止旧工具，避免同时登录同一账号。ASF 的登录令牌和验证器也支持迁移，详见[迁移指南](https://gamer.mom/docs#coming-from-another-idler)。
 
-**Can I run it on a VPS, so my PC doesn't have to stay on?** Yes. A small rented Linux server with 1 CPU and 1 GB
-of memory is plenty. Install Docker, start it with the example compose file, and open the dashboard through an SSH
-tunnel, or from anywhere behind a password (HTTPS with your own domain works too). The guide goes through it step
-by step, from renting the server to adding your accounts:
-[On a VPS](https://gamer.mom/docs#on-a-vps-a-rented-server).
+**设置选项为什么很少？** 默认显示常用选项，勾选 Show advanced 可查看运行时序、挂卡顺序、管理端口和密码等高级设置。
 
-**What if something breaks?** The dashboard's **Log** tab says what happened in plain words. If that doesn't help,
-open an [issue](https://github.com/VisaHolder/gamerfarm/issues) and paste the log lines.
+**提示 Steam 限流怎么办？** 程序会等待后重试，频繁重启可能加重请求压力。
 
-## More
+**配置在哪里？** Docker 版在挂载的 `./config`；Windows 安装版默认在 `%LOCALAPPDATA%\Programs\gamer.farm\config`，便携版在解压目录。可以使用程序内的加密备份与恢复功能迁移数据。
 
-- [The guide](https://gamer.mom/docs) starts with a beginner's walkthrough, then covers every feature and
-  setting. The same pages are in [docs/](docs/README.md) here.
-- [Every command](https://gamer.mom/commands), in one list.
-- [Add-ons](docs/addons.md): reap's official add-ons ([the signed list](addons/addons.json)), also on
-  [gamer.mom](https://gamer.mom/addons).
-- [Write a plugin](https://gamer.mom/plugins) to add your own commands and features in a few lines of C#.
-- To build it yourself you need the [.NET 10 SDK](https://dotnet.microsoft.com/download):
+**可以放在 VPS 上吗？** 可以。使用 Docker 或 Linux 独立运行包即可，访问方式见[上游 VPS 指南](https://gamer.mom/docs#on-a-vps-a-rented-server)。
 
-  ```
-  git clone https://github.com/VisaHolder/gamerfarm.git
-  cd gamerfarm
-  dotnet publish src/GamerFarm -c Release -o run
-  run\gamerFarm.exe
-  ```
+**能否让多个账号加入 Steam 群组？** 在全局设置的 Groups every account joins 中填写群组链接，也可执行 `joingroup all <链接>`。只支持无需审批的开放群组。
 
-## Licence
+**遇到其他问题怎么办？** 在 Log 页面或 Docker 日志中查看具体错误，再到[上游 Issues](https://github.com/VisaHolder/gamerfarm/issues)反馈，并注意隐藏账号凭据。
 
-[Mozilla Public License 2.0](LICENSE). Use it, fork it, sell it. Plugins can use any licence you like, even
-closed-source. If you change gamer.farm's own files and share the result, share those changes too.
+## 开发与更多文档
 
-Built on [SteamKit2](https://github.com/SteamRE/SteamKit). Everything else is written from scratch for gamer.farm.
+- [使用指南](https://gamer.mom/docs)：首次设置、各项功能和设置说明，本仓库也保留了 [docs/](docs/README.md)。
+- [附加组件](docs/addons.md)：上游附加组件说明及[签名清单](addons/addons.json)。
+- [插件开发](https://gamer.mom/plugins)：用 C# 扩展命令和功能。
+- [上游英文项目介绍](README.upstream.md)：自动同步时更新，便于查阅上游最新说明。
+
+自行编译需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)：
+
+```bash
+git clone https://github.com/Panda-995/gamerfarm.git
+cd gamerfarm
+dotnet publish src/GamerFarm -c Release -o run
+```
+
+Windows 运行 `run\gamerFarm.exe`；Linux/macOS 可使用对应平台的发行包，或按上游指南构建。
+
+## 许可证与致谢
+
+项目采用 [Mozilla Public License 2.0](LICENSE)。可以使用、Fork 和商业分发；插件可以使用其他许可证，包括闭源许可证。修改并分发 gamer.farm 自身文件时，需要按许可证公开对应修改。
+
+应用由上游作者开发，基于 [SteamKit2](https://github.com/SteamRE/SteamKit)。本 Fork 维护中文介绍、部署配置和自动镜像构建，完整英文说明见 [README.upstream.md](README.upstream.md)。

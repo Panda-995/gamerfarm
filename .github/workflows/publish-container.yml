@@ -8,6 +8,9 @@ on:
       - Dockerfile
       - .dockerignore
       - .github/workflows/publish-container.yml
+      - .github/scripts/**
+      - README.md
+      - docker-compose.ghcr.yml
   schedule:
     - cron: '23 */6 * * *'
   workflow_dispatch:
@@ -29,33 +32,20 @@ jobs:
     outputs:
       revision: ${{ steps.sync.outputs.revision }}
       changed: ${{ steps.sync.outputs.changed }}
+      upstream_revision: ${{ steps.sync.outputs.upstream_revision }}
     steps:
+      - name: Check out the fork with its full merge history
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify the upstream synchronization behavior
+        run: python3 .github/scripts/test-sync-upstream.py
+
       - name: Merge upstream and select the exact build revision
         id: sync
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const ref = 'heads/main';
-            const before = await github.rest.git.getRef({ owner, repo, ref });
-            if (['schedule', 'workflow_dispatch'].includes(context.eventName)) {
-              try {
-                const result = await github.rest.repos.mergeUpstream({ owner, repo, branch: 'main' });
-                core.info(result.data.message);
-              } catch (error) {
-                if (error.status === 409) {
-                  core.setFailed('Upstream merge conflicts with fork changes. Resolve the conflict on main; no force push was attempted.');
-                  return;
-                }
-                throw error;
-              }
-            }
-            const after = await github.rest.git.getRef({ owner, repo, ref });
-            core.setOutput('revision', after.data.object.sha);
-            core.setOutput('changed', before.data.object.sha !== after.data.object.sha ? 'true' : 'false');
-            await core.summary.addHeading('Upstream synchronization')
-              .addRaw(`Build revision: ${after.data.object.sha}\n`)
-              .write();
+        run: bash .github/scripts/sync-upstream.sh
 
   publish:
     name: Build, test and publish amd64 + arm64
@@ -106,6 +96,7 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ needs.sync.outputs.revision }}
+            io.github.gamerfarm.upstream-revision=${{ needs.sync.outputs.upstream_revision }}
             org.opencontainers.image.title=gamer.farm
             org.opencontainers.image.licenses=MPL-2.0
           cache-from: type=gha,scope=gamerfarm-multiarch

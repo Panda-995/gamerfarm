@@ -7,10 +7,10 @@ services:
     init: true
     stop_grace_period: 1m
     stdin_open: true
-    user: "${PUID:-1000}:${PGID:-1000}"
+    user: "0:0"
     environment:
-      TZ: ${TZ:-Asia/Shanghai}
-      GAMERFARM_WEB_PASSWORD: ${GAMERFARM_WEB_PASSWORD:?Set a dashboard password in .env}
+      TZ: Asia/Shanghai
+      GAMERFARM_WEB_PASSWORD: "panda995"
     ports:
       - "7242:7242"
     volumes:
